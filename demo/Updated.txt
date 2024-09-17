@@ -1,0 +1,625 @@
+import { Grid, IconButton } from '@mui/material';
+import PropTypes from 'prop-types';
+// import { format, isValid } from 'date-fns';
+import { useSelector, useDispatch } from 'react-redux';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+// import { useGridApiRef } from '@mui/x-data-grid';
+// import _ from 'lodash';
+import {
+  DataGridPro,
+  GridToolbarContainer,
+  GridToolbarExport,
+} from '@mui/x-data-grid-pro';
+import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
+// import { capitalize, formatNumber } from '../../../../../../utils/helpers';
+import { XgridViewContainer } from '../../../../../../shared/XGridStateContainer';
+
+import ConfirmationModal from './confirmationModel/index';
+
+// import DropDownMenu from '../../../../../../shared/DropDownMenu';
+import NotificationModal from '../../../../../../shared/NotificationModal';
+import { notificationModalInitialState } from '../../../../../shared/constants';
+import { Color } from '../../../../../../config/styles';
+
+import {
+  selectLoading,
+  selectMonthEndDebitCollectionInfo,
+  getMonthEndDebitCollectionInfo,
+  submitProcessMonthEndDebitCollect,
+  // selectSorting,
+  selectPagination,
+  // selectMonthEndDebitCollectionFilters,
+  // setPage,
+  // setPageSize,
+  // setSorting,
+  // setFilters,
+  // selectFilters,
+  selectProccMonthEndDebitCollection,
+} from './slice';
+import { selectProcessor } from '../../../../../../shared/components/Processor/slice';
+import { selectProcessorCode } from '../../../../../../shared/components/ProcessorCode/slice';
+import { selectFundingBatchName } from '../../../slice';
+import DropDownMenu from '../../../../../../shared/DropDownMenu';
+
+const MonthEndDebitCollection = () => {
+  const [selectedData, setSelectedData] = useState([]);
+  // const [disabledRows, setDisabledRows] = useState(new Set());
+  const [processMonthEndStatus, setProcessMonthEndStatus] = useState(
+    notificationModalInitialState,
+  );
+
+  const [downloadWarningModal, setDownloadWarningModal] = useState(
+    notificationModalInitialState,
+  );
+  // const [expandedRows, setExpandedRows] = useState(new Set());
+  const [selectedRows, setSelectedRows] = useState({});
+  const [expandedRows, setExpandedRows] = useState({});
+  // const apiRef = useGridApiRef();
+  // const title = 'Month Debit Collection';
+  const dispatch = useDispatch();
+  const gridActions = [
+    {
+      name: 'Process Month End Debit',
+      value: 'processMonthEndDebit',
+    },
+  ];
+
+  const getMonthEndDebitCollection = useSelector(selectMonthEndDebitCollectionInfo);
+  const loading = useSelector(selectLoading);
+
+  const [open, setOpen] = useState(false);
+  const processor = useSelector(selectProcessor);
+  const processorCode = useSelector(selectProcessorCode);
+  const fundingBatchName = useSelector(selectFundingBatchName);
+  // const sorting = useSelector(selectSorting);
+  // const monthEndDebitfilters = useSelector(selectMonthEndDebitCollectionFilters);
+  // const filtersModel = useSelector(selectFilters);
+  // const { currentPage, pageSize: currentPageSize, totalRecords } = useSelector(
+  //   selectPagination,
+  // );
+  const { totalRecords } = useSelector(selectPagination);
+
+  const isInitialMount = useRef(true);
+
+  const processMonthEndDebit = useSelector(selectProccMonthEndDebitCollection);
+
+  useEffect(() => {
+    if (processor !== '' && processorCode !== '') {
+      dispatch(getMonthEndDebitCollectionInfo({ processor, processorCode }));
+    }
+  }, [processor, processorCode]);
+
+  // const refreshData = ({ page, pageSize, sortModel, filters }) => {
+  //   if (page !== currentPage) {
+  //     dispatch(setPage(page));
+  //   }
+
+  //   if (pageSize !== currentPageSize) {
+  //     dispatch(setPageSize(pageSize));
+  //   }
+
+  //   if (!_.isEqual(sortModel, sorting)) {
+  //     dispatch(setSorting(sortModel));
+  //   }
+
+  //   if (!_.isEqual(filters, monthEndDebitfilters)) {
+  //     dispatch(
+  //       setFilters({
+  //         ...filtersModel,
+  //         monthEndDebitCollectionInfo: filters,
+  //       }),
+  //     );
+  //   }
+  //   fetchMonthEndDebit();
+  // };
+
+  // const fetchMonthEndDebit = () => {
+  //   if (processor && processor !== '' && processorCode && processorCode !== '') {
+  //     dispatch(getMonthEndDebitCollectionInfo({ processor, processorCode }));
+  //   }
+  // };
+
+  const rowLookup = useMemo(() => {
+    const map = new Map();
+    if (Array.isArray(getMonthEndDebitCollection)) {
+      getMonthEndDebitCollection.forEach((row) => map.set(row.id, row));
+    }
+    return map;
+  }, [getMonthEndDebitCollection]);
+
+  const getChildren = useCallback(
+    (row) => {
+      const children = [];
+      const parentPath = row.groupBy.join('/');
+      rowLookup.forEach((child) => {
+        const childPath = child.groupBy.slice(0, -1).join('/');
+        if (childPath === parentPath) {
+          children.push(child);
+          children.push(...getChildren(child));
+        }
+      });
+
+      return children;
+    },
+    [rowLookup],
+  );
+
+  // const onSelectRows = useCallback(
+  //   (params) => {
+  //     const selectedRowsMap = new Map();
+  //     const newDisabledRows = new Set(disabledRows);
+  //     const newExpandedRows = new Set(expandedRows);
+
+  //     selectedData.forEach((selectedRow) => {
+  //       if (!params.some((row) => row.id === selectedRow.id)) {
+  //         const row = rowLookup.get(selectedRow.id);
+  //         if (row) {
+  //           const children = getChildren(row);
+  //           children.forEach((child) => {
+  //             newDisabledRows.delete(child.id);
+  //             newExpandedRows.delete(child.id);
+  //           });
+  //         }
+  //       }
+  //     });
+
+  //     params.forEach((row) => {
+  //       selectedRowsMap.set(row.id, row);
+  //       const foundRow = rowLookup.get(row.id);
+  //       if (foundRow) {
+  //         const children = getChildren(foundRow);
+  //         children.forEach((child) => {
+  //           selectedRowsMap.set(child.id, child);
+  //           newDisabledRows.add(child.id);
+  //           newExpandedRows.add(child.id); // Add to expanded rows
+  //         });
+  //         newExpandedRows.add(foundRow.groupBy[0]);
+  //       }
+  //     });
+
+  //     setSelectedData(Array.from(selectedRowsMap.values()));
+  //     setDisabledRows(newDisabledRows);
+  //     setExpandedRows(newExpandedRows); // Update expanded rows
+  //   },
+  //   [disabledRows, expandedRows, selectedData, rowLookup, getChildren],
+  // );
+
+  const extractFundingDetailsByAllMerchants = (data) => {
+    const merchantDetails = new Map();
+    data.forEach((item) => {
+      const { merchantId, fundingId, tid, ttlFeeAmt, groupBy } = item;
+      if (!merchantDetails.has(merchantId)) {
+        merchantDetails.set(merchantId, {
+          fundingIds: [],
+          tids: new Set(),
+          totalFeeAmount: 0,
+        });
+      }
+
+      const details = merchantDetails.get(merchantId);
+      if (fundingId != null) {
+        details.fundingIds.push(fundingId);
+      }
+
+      if (tid != null) {
+        details.tids.add(tid);
+      }
+
+      if (ttlFeeAmt != null && groupBy != null && groupBy.length > 1) {
+        details.totalFeeAmount += ttlFeeAmt;
+      }
+    });
+
+    const result = Array.from(
+      merchantDetails,
+      ([merchantId, { fundingIds, tids, totalFeeAmount }]) => ({
+        merchantId,
+        fundingIds,
+        tid: Array.from(tids).join(', '),
+        totalFeeAmount: (Math.round(totalFeeAmount * 100) / 100).toFixed(2),
+      }),
+    );
+
+    return result;
+  };
+
+  const generateUniqueId = () =>
+    `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+  const extractFundingDetails = (data) => {
+    const merchantDetails = new Map();
+
+    data.forEach((item) => {
+      const { merchantId, storeNo, fundingId, tid, ttlFeeAmt, groupBy } = item;
+
+      if (!merchantDetails.has(merchantId)) {
+        merchantDetails.set(merchantId, {
+          id: generateUniqueId(),
+          fundingIds: [],
+          tids: new Set(),
+          storeNo: new Set(),
+          totalFeeAmount: 0,
+        });
+      }
+
+      const details = merchantDetails.get(merchantId);
+
+      if (fundingId != null) {
+        details.fundingIds.push(fundingId);
+      }
+
+      if (tid != null) {
+        details.tids.add(tid);
+      }
+
+      if (storeNo != null) {
+        details.storeNo.add(storeNo);
+      }
+      if (ttlFeeAmt != null && groupBy != null && groupBy.length > 1) {
+        details.totalFeeAmount += ttlFeeAmt;
+      }
+    });
+
+    const result = Array.from(
+      merchantDetails,
+      ([merchantId, { fundingIds, id, tids, storeNo, totalFeeAmount }]) => ({
+        merchantId,
+        id,
+        fundingIds,
+        tid: Array.from(tids).join(', '),
+        storeNo: Array.from(storeNo).join(', '),
+        totalFeeAmount: (Math.round(totalFeeAmount * 100) / 100).toFixed(2),
+      }),
+    );
+
+    return result;
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+    } else if (processMonthEndDebit.error) {
+      setProcessMonthEndStatus({
+        open: true,
+        icon: 'warning-outlined',
+        title: 'status',
+        helperText: processMonthEndDebit.error,
+        primaryButtonAction: () => {
+          handleCloseDownloadSuccessModal();
+        },
+        primaryButtonBackgroundColor: Color.$BoostGreen,
+      });
+    }
+  }, [processMonthEndDebit.error]);
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+    } else if (processMonthEndDebit.success && !processMonthEndDebit.error) {
+      setProcessMonthEndStatus({
+        open: true,
+        icon: 'Success',
+        title: 'Status',
+        helperText: processMonthEndDebit.data,
+        primaryButtonAction: handleCloseDownloadSuccessModal,
+        primaryButtonBackgroundColor: Color.$BoostGreen,
+      });
+      sessionStorage.setItem('popupShown', 'true');
+    }
+  }, [processMonthEndDebit.success, processMonthEndDebit.error]);
+
+  useEffect(() => {
+    const popupShown = sessionStorage.getItem('popupShown');
+    if (popupShown) {
+      setProcessMonthEndStatus({
+        open: false,
+        icon: '',
+        title: '',
+        helperText: '',
+        primaryButtonAction: null,
+        primaryButtonBackgroundColor: Color.$BoostGreen,
+      });
+      sessionStorage.removeItem('popupShown');
+    }
+  }, []);
+
+  const handleConfirm = () => {
+    dispatch(
+      submitProcessMonthEndDebitCollect({
+        fundingBatchId: fundingBatchName,
+        processor,
+        processorCode,
+        fundingRequest: extractFundingDetailsByAllMerchants(selectedData),
+        comments: 'Process Month End Debit',
+      }),
+    );
+    handleClose();
+  };
+
+  const handleCloseDownloadWarningModal = () => {
+    setDownloadWarningModal(notificationModalInitialState);
+  };
+
+  const handleCloseDownloadSuccessModal = () => {
+    setProcessMonthEndStatus(notificationModalInitialState);
+    sessionStorage.removeItem('popupShown');
+    if (processor !== '' && processorCode !== '') {
+      dispatch(getMonthEndDebitCollectionInfo({ processor, processorCode }));
+    }
+  };
+  const SubmitProcessMonthEndDebit = (selectedRows1) => {
+    if (selectedRows1.length > 0) {
+      setOpen({
+        open: true,
+        title: 'Confirm Action',
+        handleClose: { handleClose },
+        handleConfirm: { handleConfirm },
+      });
+    } else {
+      setDownloadWarningModal({
+        open: true,
+        icon: 'warning',
+        title: 'Warning',
+        helperText: `Please select at least one Month Debit Collection Transaction to process.`,
+        primaryButtonLabel: 'OK',
+        primaryButtonAction: () => {
+          handleCloseDownloadWarningModal();
+        },
+        primaryButtonBackgroundColor: Color.$BoostGreen,
+      });
+    }
+  };
+  // const handleActionItemClick = (action) => {
+  //   switch (action) {
+  //     case 'processMonthEndDebit':
+  //       SubmitProcessMonthEndDebit(selectedData);
+  //       break;
+  //     default:
+  //       break;
+  //   }
+  // };
+
+  // const disableRowSection = (params) =>
+  //   !(disabledRows.has(params.id) || params.row.isLinked);
+  // const treeData = true;
+
+  // const getTreeDataPath = (row) => row.groupBy || [];
+
+  // Group rows by the first item in groupBy
+
+  const handleActionItemClick = (action) => {
+    switch (action) {
+      case 'processMonthEndDebit':
+        SubmitProcessMonthEndDebit(selectedData);
+        break;
+      default:
+        break;
+    }
+  };
+
+  const groupedData = getMonthEndDebitCollection.reduce((acc, row) => {
+    const groupId = row.groupBy[0];
+    if (!acc[groupId]) {
+      acc[groupId] = [];
+    }
+    acc[groupId].push(row);
+    return acc;
+  }, {});
+
+  const columns = [
+    {
+      field: 'expand',
+      headerName: '',
+      width: 50,
+      renderCell: (params) => {
+        const isParent = params.row.groupBy.length === 1;
+        return isParent ? (
+          <IconButton
+            onClick={() => toggleRowExpansion(params.row.id)}
+            aria-label="expand row"
+            size="small"
+          >
+            {expandedRows[params.row.id] ? (
+              <KeyboardArrowUp />
+            ) : (
+              <KeyboardArrowDown />
+            )}
+          </IconButton>
+        ) : null;
+      },
+    },
+    { field: 'id', headerName: 'ID', flex: 1 },
+    { field: 'chain', headerName: 'Chain', flex: 1 },
+    { field: 'merchantId', headerName: 'MID', flex: 1 },
+    { field: 'merchantName', headerName: 'DBAName', flex: 1.8 },
+    { field: 'settlementType', headerName: 'SettleType', flex: 1 },
+    {
+      field: 'fundingDate',
+      headerName: 'FundingDate',
+      flex: 1.3,
+      type: 'date',
+      valueGetter: (params) => new Date(params),
+    },
+    {
+      field: 'transCount',
+      headerName: 'TxnCnt',
+      flex: 1,
+      cellClassName: 'align-right',
+    },
+    {
+      field: 'ttlFeeAmt',
+      headerName: 'TotalMonthEndFee',
+      flex: 1.3,
+      cellClassName: 'align-right',
+      type: 'number',
+    },
+    { field: 'fundingId', headerName: 'Funding Id', flex: 1 },
+    { field: 'storeNo', headerName: 'Store Number', flex: 1 },
+  ];
+
+  const handleSelectionModelChange = (selectionModel) => {
+    const newSelectedRows = {};
+
+    const selectRowAndChildren = (rowId) => {
+      if (rowLookup.has(rowId)) {
+        const row = rowLookup.get(rowId);
+
+        // Select the row itself
+        newSelectedRows[rowId] = { selected: true };
+
+        // Select child rows
+        getChildren(row).forEach((child) => {
+          newSelectedRows[child.id] = { selected: true };
+        });
+      }
+    };
+
+    const deselectRowAndChildren = (rowId) => {
+      if (rowLookup.has(rowId)) {
+        const row = rowLookup.get(rowId);
+
+        // Deselect the row itself
+        delete newSelectedRows[rowId];
+
+        // Deselect child rows
+        getChildren(row).forEach((child) => {
+          delete newSelectedRows[child.id];
+        });
+      }
+    };
+
+    // Select new rows
+    selectionModel.forEach((id) => {
+      selectRowAndChildren(id);
+    });
+
+    // Deselect rows that are no longer in the selectionModel
+    Object.keys(selectedRows).forEach((id) => {
+      if (!selectionModel.includes(id)) {
+        deselectRowAndChildren(id);
+      }
+    });
+
+    // Update selectedRows state
+    setSelectedRows(newSelectedRows);
+  };
+
+  const getSelectedData = () => {
+    const selectedData1 = getMonthEndDebitCollection.filter(
+      (row) => selectedRows[row.id]?.selected,
+    );
+    setSelectedData(selectedData1);
+    return selectedData1;
+  };
+
+  useEffect(() => {
+    const selectedData1 = getSelectedData();
+    console.log(selectedData1);
+  }, [selectedRows, getMonthEndDebitCollection]);
+
+  const toggleRowExpansion = (rowId) => {
+    setExpandedRows((prev) => ({
+      ...prev,
+      [rowId]: !prev[rowId],
+    }));
+  };
+
+  const getVisibleRows = () => {
+    const visibleRows = [];
+    Object.values(groupedData).forEach((rows) => {
+      rows
+        .sort(
+          (a, b) => a.groupBy.length - b.groupBy.length || a.id.localeCompare(b.id),
+        )
+        .forEach((row) => {
+          if (row.groupBy.length === 1 || expandedRows[row.groupBy[0]]) {
+            visibleRows.push(row);
+          }
+        });
+    });
+    return visibleRows;
+  };
+
+  const CustomToolbar = () => (
+    <GridToolbarContainer>
+      <DropDownMenu
+        key="actionsCtrlSettlements"
+        label="Actions"
+        items={gridActions}
+        handleMenuItemClick={handleActionItemClick}
+      />
+      <GridToolbarExport />
+    </GridToolbarContainer>
+  );
+
+  return (
+    <Grid container>
+      <Grid item xs={12}>
+        <Grid container>
+          <Grid item xs={12}>
+            <XgridViewContainer className="align-toolbarContainer" crop={350}>
+              <DataGridPro
+                rows={getVisibleRows() || []}
+                columns={columns}
+                rowCount={totalRecords}
+                loading={loading}
+                error=""
+                components={{
+                  Toolbar: CustomToolbar,
+                }}
+                checkboxSelection
+                disableRowSelectionOnClick
+                onSelectionModelChange={handleSelectionModelChange}
+              />
+            </XgridViewContainer>
+          </Grid>
+        </Grid>
+      </Grid>
+      <NotificationModal
+        id="download-warning-modal"
+        open={downloadWarningModal.open}
+        icon={downloadWarningModal.icon}
+        title={downloadWarningModal.title}
+        onClose={handleCloseDownloadWarningModal}
+        helperText={downloadWarningModal.helperText}
+        primaryButtonLabel={downloadWarningModal.primaryButtonLabel}
+        primaryButtonBackgroundColor={
+          downloadWarningModal.primaryButtonBackgroundColor
+        }
+        primaryButtonAction={downloadWarningModal.primaryButtonAction}
+        secondaryButtonLabel={downloadWarningModal.secondaryButtonLabel}
+        secondaryButtonAction={downloadWarningModal.secondaryButtonAction}
+      ></NotificationModal>
+      <ConfirmationModal
+        open={open}
+        handleClose={handleClose}
+        handleConfirm={handleConfirm}
+        title="Confirm Action"
+        rows={extractFundingDetails(selectedData)}
+      />
+      <NotificationModal
+        id="success-modal"
+        open={processMonthEndStatus.open}
+        icon={processMonthEndStatus.icon}
+        title={processMonthEndStatus.title}
+        onClose={handleCloseDownloadSuccessModal}
+        helperText={processMonthEndStatus.helperText}
+        primaryButtonLabel={processMonthEndStatus.primaryButtonLabel}
+        primaryButtonBackgroundColor={
+          processMonthEndStatus.primaryButtonBackgroundColor
+        }
+        primaryButtonAction={processMonthEndStatus.primaryButtonAction}
+      ></NotificationModal>
+    </Grid>
+  );
+};
+
+MonthEndDebitCollection.propTypes = {
+  // eslint-disable-next-line react/no-unused-prop-types
+  merchantId: PropTypes.array,
+};
+
+export default MonthEndDebitCollection;

@@ -1,0 +1,88 @@
+ {/* <DataGridPro
+                rows={getVisibleRows() || []}
+                columns={columns}
+                rowCount={totalRecords}
+                loading={loading}
+                error=""
+                rootName="monthEndDebit"
+                title={capitalize(title)}
+                defaultSortModel={sorting}
+                pageSize={currentPageSize}
+                refreshData={refreshData}
+                defaultFilters={monthEndDebitfilters}
+                // onSelectRows={onSelectRows}
+                onRowSelectionModelChange={onSelectRows}
+                includeContains
+                isRowSelectable={disableRowSection}
+                checkboxSelection={false}
+                apiRef={apiRef}
+                disableRowSelectionOnClick
+                defaultGroupingExpansionDepth={-1}
+                getRowClassName={(params) => {
+                  let className = '';
+                  if (params?.row?.isLinked) {
+                    className = 'MuiDataGrid-row-highlight-gray';
+                  }
+                  className += disabledRows.has(params.id)
+                    ? 'MuiDataGrid-row-highlight-lightgray'
+                    : '';
+                  return className;
+                }}
+                renderCell={(params) => {
+                  const { colDef, value } = params;
+
+                  // if (colDef.field === 'checkBox') {
+                  //   return (
+                  //     <Checkbox
+                  //       checked={selectedRows.has(row.id)}
+                  //       onClick={(event) => {
+                  //         event.stopPropagation();
+                  //         debouncedHandleCheckBox(row); // Call the debounced handler
+                  //       }}
+                  //     />
+                  //   );
+                  // }
+
+                  if (colDef.field === 'checkBox') {
+                    return <Checkbox />;
+                  }
+
+                  if (colDef.format === 'currency') {
+                    return formatNumber(value);
+                  }
+
+                  if (colDef.format === 'dateTime') {
+                    const date = new Date(value);
+                    if (!isValid(date)) {
+                      return '-';
+                    }
+                    return format(date, 'MM/dd/yy');
+                  }
+
+                  return value;
+                }}
+                headerCondensed
+                generalActions={[
+                  {
+                    type: 'component',
+                    align: 'right',
+                    component: (
+                      <DropDownMenu
+                        key="actionsCtrlSettlements"
+                        label="Actions"
+                        items={gridActions}
+                        handleMenuItemClick={handleActionItemClick}
+                      />
+                    ),
+                  },
+                ]}
+                cellClick={({ field }, event) => {
+                  if (field === 'fileName') {
+                    event.stopPropagation();
+                  }
+                }}
+                hideExport
+                disableGridSettings
+                treeData={treeData}
+                getTreeDataPath={getTreeDataPath}
+              /> */}
